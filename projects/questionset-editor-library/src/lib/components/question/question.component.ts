@@ -36,21 +36,17 @@ export class QuestionComponent implements OnInit, AfterViewInit, OnDestroy {
   @Output() questionEmitter = new EventEmitter<any>();
   private onComponentDestroy$ = new Subject<any>();
   toolbarConfig: any = {};
-  public showAssetPicker = false;
-  public terms = false;
   public editorState: any = {};
   public showPreview = false;
   public mediaArr: any = [];
-  public assetShow = false;
+  public videoShow = false;
   public showFormError = false;
   public actionType: string;
-  assetType: string; 
   selectedSolutionType: string;
   showSolutionDropDown = true;
   showSolution = false;
-  assetSolutionName: string;
-  assetSolutionData: any;
-  assetThumbnail: string;
+  videoSolutionName: string;
+  videoThumbnail: string;
   solutionUUID: string;
   solutionTypes: any = [{
     type: 'html',
@@ -59,10 +55,6 @@ export class QuestionComponent implements OnInit, AfterViewInit, OnDestroy {
   {
     type: 'video',
     value: 'video'
-  },
-  {
-    type: 'audio',
-    value: 'audio'
   }];
   questionMetaData: any;
   questionInteractionType;
@@ -87,7 +79,6 @@ export class QuestionComponent implements OnInit, AfterViewInit, OnDestroy {
   public framework;
   public frameworkDetails: any = {};
   public questionMetadataFormStatus = true;
-  public categoryCodes: string[] = [];
   public buttonLoaders = {
     saveButtonLoader: false,
     'review': false
@@ -96,7 +87,6 @@ export class QuestionComponent implements OnInit, AfterViewInit, OnDestroy {
   subMenus: SubMenu[];
   showAddSecondaryQuestionCat: boolean;
   sliderDatas: any = {};
-  sessionContext = this.configService.sessionContext;
   sliderOptions: any = {};
   hints: any;
   categoryLabel: any = {};
@@ -154,7 +144,6 @@ export class QuestionComponent implements OnInit, AfterViewInit, OnDestroy {
     this.initialLeafFormConfig = _.cloneDeep(this.leafFormConfig);
     this.initialize();
     this.framework = _.get(this.editorService.editorConfig, 'context.framework');
-    this.initializeFrameworkCategories();
     this.qualityFormConfig = this.editorService.qualityFormConfig;
   }
 
@@ -168,27 +157,6 @@ export class QuestionComponent implements OnInit, AfterViewInit, OnDestroy {
         this.populateFrameworkData();
       }
     });
-  }
-
-  initializeFrameworkCategories() {
-    const frameworkId = this.framework || this.frameworkService.organisationFramework;
-    if (frameworkId) {
-      this.frameworkService.getTargetFrameworkCategories([frameworkId]);
-      this.frameworkService.frameworkData$.pipe(
-        takeUntil(this.onComponentDestroy$)
-      ).subscribe(frameworkData => {
-        if (frameworkData?.frameworkdata[frameworkId]) {
-          const categories = frameworkData.frameworkdata[frameworkId].categories || [];
-          if (categories.length) {
-            this.categoryCodes = categories?.map(category => category.code)
-            this.sessionContext = [...this.sessionContext, ...this.categoryCodes];
-          }
-        }
-      }, err => {
-        this.categoryCodes = [];
-        console.error('Failed to get framework data:', err);
-      });
-    }
   }
 
   populateFrameworkData() {
@@ -290,13 +258,13 @@ export class QuestionComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.solutionUUID = this.editorState.solutions[0].id;
                 this.showSolutionDropDown = false;
                 this.showSolution = true;
-                if (this.selectedSolutionType === 'video' || this.selectedSolutionType === 'audio') {
+                if (this.selectedSolutionType === 'video') {
                   const index = _.findIndex(this.questionMetaData.media, (o) => {
-                    return o.type === this.selectedSolutionType && o.id === this.editorState.solutions[0].value;
+                    return o.type === 'video' && o.id === this.editorState.solutions[0].value;
                   });
-                  this.assetSolutionName = this.questionMetaData.media[index].name;
-                  this.assetThumbnail = this.questionMetaData.media[index].thumbnail;
-                } 
+                  this.videoSolutionName = this.questionMetaData.media[index].name;
+                  this.videoThumbnail = this.questionMetaData.media[index].thumbnail;
+                }
                 if (this.selectedSolutionType === 'html') {
                   this.editorState.solutions = this.editorState.solutions[0].value;
                 }
@@ -728,64 +696,58 @@ export class QuestionComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   }
 
-  assetDataOutput(event) {
+  videoDataOutput(event) {
     if (event) {
-      this.assetSolutionData = event;
-      this.assetSolutionName = event.name;
+      this.videoSolutionName = event.name;
       this.editorState.solutions = event.identifier;
-      this.assetThumbnail = event?.thumbnail;
-      const assetMedia: any = {};
-      assetMedia.id = event.identifier;
-      assetMedia.src = event.src;
-      assetMedia.type = this.assetType;
-      assetMedia.assetId = event.identifier;
-      assetMedia.name = event.name;
-      if (event?.thumbnail) {
-        assetMedia.thumbnail = this.assetThumbnail;
-      }
-      assetMedia.baseUrl = _.get(this.editorService.editorConfig, 'context.host') || document.location.origin;
-      if (assetMedia.thumbnail) {
+      this.videoThumbnail = event.thumbnail;
+      const videoMedia: any = {};
+      videoMedia.id = event.identifier;
+      videoMedia.src = event.src;
+      videoMedia.type = 'video';
+      videoMedia.assetId = event.identifier;
+      videoMedia.name = event.name;
+      videoMedia.thumbnail = this.videoThumbnail;
+      videoMedia.baseUrl = _.get(this.editorService.editorConfig, 'context.host') || document.location.origin;
+      if (videoMedia.thumbnail) {
         const thumbnailMedia: any = {};
-        thumbnailMedia.src = this.assetThumbnail;
+        thumbnailMedia.src = this.videoThumbnail;
         thumbnailMedia.type = 'image';
-        thumbnailMedia.id = `${this.assetType}_${event.identifier}`;
+        thumbnailMedia.id = `video_${event.identifier}`;
         thumbnailMedia.baseUrl = _.get(this.editorService.editorConfig, 'context.host') || document.location.origin;
         this.mediaArr.push(thumbnailMedia);
       }
-      this.mediaArr.push(assetMedia);
+      this.mediaArr.push(videoMedia);
       this.showSolutionDropDown = false;
       this.showSolution = true;
     } else {
       this.deleteSolution();
     }
-    this.assetShow = false;
+    this.videoShow = false;
   }
 
   selectSolutionType(data: any) {
     const index = _.findIndex(this.solutionTypes, (sol: any) => {
       return sol.value === data;
     });
-    this.assetType = data;
     this.selectedSolutionType = this.solutionTypes[index].type;
-    if (this.selectedSolutionType === 'video' || this.selectedSolutionType === 'audio') {
-      const showAsset = true;
-      this.assetShow = showAsset;
-    } 
-    else {
+    if (this.selectedSolutionType === 'video') {
+      const showVideo = true;
+      this.videoShow = showVideo;
+    } else {
       this.showSolutionDropDown = false;
     }
   }
 
   deleteSolution() {
-    if (this.selectedSolutionType === 'video' || this.selectedSolutionType === 'audio') {
+    if (this.selectedSolutionType === 'video') {
       this.mediaArr = _.filter(this.mediaArr, (item: any) => item.id !== this.editorState.solutions);
-    } 
+    }
     this.showSolutionDropDown = true;
     this.selectedSolutionType = '';
-    this.assetType = '';
-    this.assetSolutionName = '';
+    this.videoSolutionName = '';
     this.editorState.solutions = '';
-    this.assetThumbnail = '';
+    this.videoThumbnail = '';
     this.showSolution = false;
   }
 
@@ -872,48 +834,8 @@ export class QuestionComponent implements OnInit, AfterViewInit, OnDestroy {
     if (_.get(this.creationContext, 'objectType') === 'question') {
       metadata.isReviewModificationAllowed = !!_.get(this.questionMetaData, 'isReviewModificationAllowed');
     }
-
-    if (!_.isEmpty(metadata.media)) {
-      metadata.media = this.removeUnusedMedia(metadata);
-    }
     // tslint:disable-next-line:max-line-length
     return _.omit(metadata, ['question', 'numberOfOptions', 'options', 'allowMultiSelect', 'showEvidence', 'evidenceMimeType', 'showRemarks', 'markAsNotMandatory', 'leftAnchor', 'rightAnchor', 'step', 'numberOnly', 'characterLimit', 'dateFormat', 'autoCapture', 'remarksLimit', 'maximumOptions']);
-  }
-
-  removeUnusedMedia(questionMetadata: any) {
-    const media = _.get(questionMetadata, 'media');
-    for (let i = media.length - 1; i >= 0; i--) {
-      if (!this.checkMediaExists(questionMetadata, media[i].id)) {
-        media.splice(i, 1);
-      }
-    }
-    return media;
-  }
-
-  checkMediaExists(questionMetadata, mediaId) {
-    if (_.includes(questionMetadata.body, mediaId) || _.includes(questionMetadata.answer, mediaId)) {
-      return true;
-    }
-
-    if (questionMetadata?.solutions) {
-      const solutionValues = _.values(questionMetadata.solutions);
-      for (const solution of solutionValues) {
-        if (_.includes(solution, mediaId)) {
-          return true;
-        }
-      }
-    }
-
-    if (questionMetadata?.qType !== 'SA' && questionMetadata?.interactions?.response1?.options) {
-      const interactionsOptions = questionMetadata.interactions.response1.options;
-      for (const option of interactionsOptions) {
-        if (_.includes(option?.label, mediaId)) {
-          return true;
-        }
-      }
-    }
-
-    return false;
   }
 
   getAnswerHtml(optionLabel) {
@@ -938,12 +860,12 @@ export class QuestionComponent implements OnInit, AfterViewInit, OnDestroy {
   getQuestionSolution(solutionObj) {
     if (solutionObj?.type === 'html') {
       return {[solutionObj?.id]: solutionObj.value};
-    } else if (solutionObj?.type === 'video' || solutionObj?.type === 'audio') {
-      const assetMedia = this.getMediaById(solutionObj?.value);
-      const assetThumbnail = assetMedia?.thumbnail ? assetMedia?.thumbnail : '';
-      const assetSolution = this.getAssetSolutionHtml(assetThumbnail, assetMedia?.src, assetMedia.id);
-      return {[solutionObj.id]: assetSolution};
-    } 
+    } else if (solutionObj?.type === 'video') {
+      const videoMedia = this.getMediaById(solutionObj?.value);
+      const videoThumbnail = videoMedia?.thumbnail ? videoMedia?.thumbnail : '';
+      const videoSolution = this.getVideoSolutionHtml(videoThumbnail, videoMedia?.src, videoMedia.id);
+      return {[solutionObj.id]: videoSolution};
+    }
   }
 
   getMediaById(mediaId) {
@@ -959,16 +881,12 @@ export class QuestionComponent implements OnInit, AfterViewInit, OnDestroy {
     return responseDeclaration;
   }
 
-  getAssetSolutionHtml(posterURL, srcUrl, solutionMediaId) {
-    let assetSolutionHtml
-    if (this.selectedSolutionType === 'video') {
-      assetSolutionHtml = '<video data-asset-variable=\'{solutionMediaId}\' width=\'400\' controls=\'\' poster=\'{posterUrl}\'><source type=\'video/mp4\' src=\'{sourceURL}\'><source type=\'video/webm\' src=\'{sourceURL}\'></video>'
-    } else if(this.selectedSolutionType === 'audio') {
-      assetSolutionHtml = '<audio data-asset-variable=\'{solutionMediaId}\' width=\'400\' controls=\'\' poster=\'{posterUrl}\'><source type=\'audio/mp3\' src=\'{sourceURL}\'><source type=\'audio/wav\' src=\'{sourceURL}\'></audio>'
-    }
-    const assetSolutionValue = assetSolutionHtml.replace('{posterUrl}', posterURL).replace('{sourceURL}', srcUrl).replace('{sourceURL}', srcUrl).replace('{solutionMediaId}', solutionMediaId);
-    return assetSolutionValue;
+  getVideoSolutionHtml(posterURL, srcUrl, solutionMediaId) {
+    const videoSolutionHtml = '<video data-asset-variable=\'{solutionMediaId}\' width=\'400\' controls=\'\' poster=\'{posterUrl}\'><source type=\'video/mp4\' src=\'{sourceURL}\'><source type=\'video/webm\' src=\'{sourceURL}\'></video>'
+    const videoSolutionValue = videoSolutionHtml.replace('{posterUrl}', posterURL).replace('{sourceURL}', srcUrl).replace('{sourceURL}', srcUrl).replace('{solutionMediaId}', solutionMediaId);
+    return videoSolutionValue;
   }
+
 
   getMcqQuestionHtmlBody(question, templateId) {
     const mcqTemplateConfig = {
@@ -982,15 +900,14 @@ export class QuestionComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getDefaultSessionContext() {
-    const editorConfigArray = ["topic", ...this.categoryCodes];
     return _.omitBy(_.merge(
       {
         creator: _.get(this.editorService.editorConfig, 'context.user.fullName'),
         createdBy: _.get(this.editorService.editorConfig, 'context.user.id'),
-        ..._.pick(_.get(this.editorService.editorConfig, 'context'), editorConfigArray)
+        ..._.pick(_.get(this.editorService.editorConfig, 'context'), ['board', 'medium', 'gradeLevel', 'subject', 'topic'])
       },
       {
-        ..._.pick(this.questionSetHierarchy, this.sessionContext)
+        ..._.pick(this.questionSetHierarchy, this.configService.sessionContext)
       }
     ), key => _.isEmpty(key));
   }
@@ -1345,6 +1262,7 @@ export class QuestionComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onStatusChanges(event) {
+    console.log(event);
     if (_.has(event, 'isValid')) {
       this.questionMetadataFormStatus = event.isValid;
     }
@@ -1534,7 +1452,6 @@ export class QuestionComponent implements OnInit, AfterViewInit, OnDestroy {
     this.onComponentDestroy$.next();
     this.onComponentDestroy$.complete();
     this.editorCursor.clearQuestionMap();
-    this.editorCursor.removeQuestionMap(this.questionId || this.tempQuestionId);
   }
 
   sliderData($event) {

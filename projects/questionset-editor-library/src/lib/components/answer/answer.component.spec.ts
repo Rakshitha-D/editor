@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { AnswerComponent } from './answer.component';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ConfigService } from '../../services/config/config.service';
-import { SuiModule } from '@project-sunbird/ng2-semantic-ui';
+import { SuiModule } from 'ng2-semantic-ui-v9';
 
 describe('AnswerComponent', () => {
   let component: AnswerComponent;

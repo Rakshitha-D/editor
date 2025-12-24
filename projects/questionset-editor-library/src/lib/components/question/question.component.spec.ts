@@ -9,7 +9,7 @@ import { EditorService } from "../../services/editor/editor.service";
 import { ToasterService } from "../../services/toaster/toaster.service";
 import { EditorCursor } from "../../questionset-editor-cursor.service";
 import { TreeService } from "../../services/tree/tree.service";
-import { SuiModule } from "@project-sunbird/ng2-semantic-ui";
+import { SuiModule } from "ng2-semantic-ui-v9";
 import { CUSTOM_ELEMENTS_SCHEMA } from "@angular/core";
 import { TelemetryInteractDirective } from "../../directives/telemetry-interact/telemetry-interact.directive";
 import {
@@ -27,9 +27,7 @@ import {
   interactionChoiceEditorState,
   RubricData,
   videoSolutionObject,
-  mediaVideoArray,
-  audioSolutionObject,
-  mediaAudioArray
+  mediaVideoArray
 } from "./question.component.spec.data";
 import { of, throwError } from "rxjs";
 import * as urlConfig from "../../services/config/url.config.json";
@@ -718,21 +716,10 @@ describe("QuestionComponent", () => {
 
   it('#getQuestionSolution() should return video solution', () => {
     component.mediaArr = mediaVideoArray;
-    component.selectedSolutionType = "video";
     spyOn(component, 'getQuestionSolution').and.callThrough();
     spyOn(component, 'getMediaById').and.callThrough();
-    spyOn(component, 'getAssetSolutionHtml').and.callThrough();
+    spyOn(component, 'getVideoSolutionHtml').and.callThrough();
     const solution = component.getQuestionSolution(videoSolutionObject);
-    expect(solution).toBeDefined();
-  })
-
-  it('#getQuestionSolution() should return audio solution', () => {
-    component.mediaArr = mediaAudioArray;
-    component.selectedSolutionType = "audio";
-    spyOn(component, 'getQuestionSolution').and.callThrough();
-    spyOn(component, 'getMediaById').and.callThrough();
-    spyOn(component, 'getAssetSolutionHtml').and.callThrough();
-    const solution = component.getQuestionSolution(audioSolutionObject);
     expect(solution).toBeDefined();
   })
 
@@ -754,25 +741,10 @@ describe("QuestionComponent", () => {
     expect(mediaobj).toBeDefined();
   });
 
-  it('#getMediaById() should return audio object', () => {
-    component.mediaArr = mediaAudioArray;
-    spyOn(component, 'getMediaById').and.callThrough();
-    const mediaobj = component.getMediaById(mediaAudioArray[0].id);
-    expect(mediaobj).toBeDefined();
-  });
-
-  it('#getAssetSolutionHtml() should return assetSolutionHtml', () => {
-    spyOn(component, 'getAssetSolutionHtml').and.callThrough();
-    component.selectedSolutionType = "video";
-    const assetSolutionHtml = component.getAssetSolutionHtml(mediaVideoArray[0].thubmnail, mediaVideoArray[0].src, mediaVideoArray[0].id);
-    expect(assetSolutionHtml).toBeDefined();
-  });
-
-  it('#getAssetSolutionHtml() should return assetSolutionHtml', () => {
-    spyOn(component, 'getAssetSolutionHtml').and.callThrough();
-    component.selectedSolutionType = "audio";
-    const assetSolutionHtml = component.getAssetSolutionHtml(mediaAudioArray[0].thubmnail, mediaAudioArray[0].src, mediaAudioArray[0].id);
-    expect(assetSolutionHtml).toBeDefined();
+  it('#getVideoSolutionHtml() should return videoSolutionHtml', () => {
+    spyOn(component, 'getVideoSolutionHtml').and.callThrough();
+    const videoSolutionHtml = component.getVideoSolutionHtml(mediaVideoArray[0].thubmnail, mediaVideoArray[0].src, mediaVideoArray[0].id);
+    expect(videoSolutionHtml).toBeDefined();
   });
 
   it("call #getMcqQuestionHtmlBody() to verify questionBody", () => {
@@ -1124,64 +1096,6 @@ describe("QuestionComponent", () => {
     component.saveQuestion();
   });
 
-  it('#checkMediaExists() should check media exists in question data', () => {
-    const questionMetadata = {
-      body: `
-      <div class='question-body' tabindex='-1'>
-        <div class='mcq-title' tabindex='0'>
-          <p>2+2 = ?&nbsp;</p><figure class=\"image resize-25\">
-          <img src=\"/assets/public/content/do_113867310987550720172/artifact/do_113867310987550720172_1692786985884_540px-npm-logo.svg.png\"
-          alt=\"540px-Npm-logo svg\" data-asset-variable=\"do_113867310987550720172\">
-        </figure></div><div data-choice-interaction='response1' class='mcq-vertical'>
-        </div>
-      </div>`
-    }
-    spyOn(component, 'checkMediaExists').and.callThrough();
-    const mediaExists = component.checkMediaExists(questionMetadata, 'do_113867310987550720172');
-    expect(mediaExists).toBeTruthy();
-  });
-
-  it('should return true if media exists in body or answer', () => {
-    const questionMetadata = {
-      body: "<div class='question-body' tabindex='-1'><div class='mcq-title' tabindex='0'><p>5*5 = ?&nbsp;</p><figure class=\"image\"><img src=\"/assets/public/content/do_11376182181755289617/artifact/do_11376182181755289617_1679909890013_logo-test.png\" alt=\"Logo-Test\" data-asset-variable=\"do_11376182181755289617\"></figure></div><div data-choice-interaction='response1' class='mcq-vertical'></div></div>",
-      answer: "<div class='answer-container'><div class='answer-body'><p>25&nbsp;</p><figure class=\"image\"><img src=\"/assets/public/content/do_113867304916918272165/artifact/do_113867304916918272165_1692786244894_angular_full_color_logo.svg.png\" alt=\"Angular full color logo svg\" data-asset-variable=\"do_113867304916918272165\"></figure></div></div>"
-    };
-    const mediaId = 'do_11376182181755289617';
-    expect(component.checkMediaExists(questionMetadata, mediaId)).toBeTrue();
-  });
-
-  it('should return true if media exists in solutions', () => {
-    const questionMetadata = {
-      solutions: {
-        "86f5817e-c31f-4a7a-9a75-e6497a154d55": "<p>5*5 is 25&nbsp;</p><figure class=\"image\"><img src=\"/assets/public/content/do_113867304916918272165/artifact/do_113867304916918272165_1692786244894_angular_full_color_logo.svg.png\" alt=\"Angular full color logo svg\" data-asset-variable=\"do_113867304916918272165\"></figure>"
-      }
-    };
-    const mediaId = 'do_113867304916918272165';
-    expect(component.checkMediaExists(questionMetadata, mediaId)).toBeTrue();
-  });
-
-  it('should return true if media exists in solutions', () => {
-    const questionMetadata = {
-      qType: "MCQ",
-      interactions: {
-        response1: {
-          type: "choice",
-          options: [
-            {
-              label: "<p>25&nbsp;</p><figure class=\"image\"><img src=\"/assets/public/content/do_113867304916918272165/artifact/do_113867304916918272165_1692786244894_angular_full_color_logo.svg.png\" alt=\"Angular full color logo svg\" data-asset-variable=\"do_113867304916918272165\"></figure>",
-              value: 0
-            },
-            {
-                label: "<p>30</p>",
-                value: 1
-            }]
-          }
-        }
-      }
-    const mediaId = 'do_113867304916918272165';
-    expect(component.checkMediaExists(questionMetadata, mediaId)).toBeTrue();
-  });
-
   it('#getQuestionMetadata shpuld call when queston body is prepared',()=>{
     spyOn(component,'getQuestionMetadata').and.callThrough();
     component.editorState=mockData.sliderQuestionMetaData.result.question;
@@ -1378,30 +1292,6 @@ describe("QuestionComponent", () => {
     component.createQuestion();
   });
 
-  it('should set assetType and selectedSolutionType correctly for matching data', () => {
-    const data = 'video';
-    component.solutionTypes = [{ value: 'video', type: 'video' }];
-    component.selectSolutionType(data);
-    expect(component.assetType).toEqual(data);
-    expect(component.selectedSolutionType).toEqual('video');
-  });
-
-  it('should set assetShow to true for video or audio type', () => {
-    component.assetShow = false;
-    const data = 'video';
-    component.solutionTypes = [{ value: 'video', type: 'video' }];
-    component.selectSolutionType(data);
-    expect(component.assetShow).toBeTruthy();
-  });
-
-  it('should set assetShow to false for image type', () => {
-    component.assetShow = false;
-    const data = 'image';
-    component.solutionTypes = [{ value: 'image', type: 'image' }];
-    component.selectSolutionType(data);
-    expect(component.assetShow).toBeFalsy();
-  });
-
   it("#deleteSolution() should call deleteSolution and set showSolutionDropDown value", () => {
     component.editorState = mockData.editorState;
     component.deleteSolution();
@@ -1410,12 +1300,6 @@ describe("QuestionComponent", () => {
   it("#deleteSolution() should call deleteSolution and define mediaArr for video type", () => {
     component.editorState = mockData.editorState;
     component.selectedSolutionType = "video";
-    component.deleteSolution();
-    expect(component.mediaArr).toBeDefined();
-  });
-  it("#deleteSolution() should call deleteSolution and define mediaArr for audio type", () => {
-    component.editorState = mockData.editorState;
-    component.selectedSolutionType = "audio";
     component.deleteSolution();
     expect(component.mediaArr).toBeDefined();
   });
@@ -1662,34 +1546,31 @@ describe("QuestionComponent", () => {
     component.addResourceToQuestionset();
   });
 
-  it("#assetDataOutput() should call assetDataOutput and event data is empty", () => {
+  it("#videoDataOutput() should call videoDataOutput and event data is empty", () => {
     const event = "";
     spyOn(component, "deleteSolution");
-    component.assetDataOutput(event);
+    component.videoDataOutput(event);
     expect(component.deleteSolution).toHaveBeenCalled();
   });
-  it("#assetDataOutput() should call assetDataOutput and event data is not  empty", () => {
+  it("#videoDataOutput() should call videoDataOutput and event data is not  empty", () => {
     const event = { name: "event name", identifier: "1234" };
-    component.assetDataOutput(event);
-    expect(component.assetSolutionData).toBeDefined();
+    component.videoDataOutput(event);
   });
-  it("#assetDataOutput() should call assetDataOutput for thumbnail", () => {
+  it("#videoDataOutput() should call videoDataOutput for thumbnail", () => {
     const event = {
       name: "event name",
       identifier: "1234",
       thumbnail: "sample data",
     };
-    component.assetDataOutput(event);
-    expect(component.assetSolutionData).toBeDefined();
+    component.videoDataOutput(event);
   });
-  it("#assetDataOutput() should call assetDataOutput for thumbnail", () => {
+  it("#videoDataOutput() should call videoDataOutput for thumbnail", () => {
     const event = {
       name: "event name",
       identifier: "1234",
       thumbnail: "sample data",
     };
-    component.assetDataOutput(event);
-    expect(component.assetSolutionData).toBeDefined();
+    component.videoDataOutput(event);
   });
   it("#subMenuChange() should set the sub-menu value ", () => {
     spyOn(component,'subMenuChange').and.callThrough();

@@ -1,4 +1,4 @@
-export interface ContextBase {
+export interface Context {
     programId?: string;
     contributionOrgId?: string;
     user: User;
@@ -23,6 +23,10 @@ export interface ContextBase {
     };
     env: string;
     defaultLicense?: any;
+    board?: any;
+    medium?: any;
+    gradeLevel?: any;
+    subject?: any;
     topic?: any;
     framework: string;
     cloudStorageUrls?: string[];
@@ -39,9 +43,6 @@ export interface ContextBase {
     collectionPrimaryCategory?: string;
     targetFWIds?: string[];
     cloudStorage?: any;
-}
-export interface Context extends ContextBase{
-    [key: string]: any;
 }
 export interface User {
     id: string;

@@ -8,7 +8,7 @@ import { ConfigService } from '../config/config.service';
 import * as urlConfig from '../../services/config/url.config.json';
 import * as labelConfig from '../../services/config/label.config.json';
 import * as categoryConfig from '../../services/config/category.config.json';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 import { PublicDataService } from '../public-data/public-data.service';
 import { ToasterService } from '../../services/toaster/toaster.service';
 import { TreeService } from '../tree/tree.service';
@@ -19,7 +19,6 @@ import * as _ from 'lodash-es';
 describe('EditorService', () => {
   let editorService: EditorService;
   let treeService;
-  let toasterService;
   const configStub = {
     urlConFig: (urlConfig as any).default,
     labelConfig: (labelConfig as any).default,
@@ -40,9 +39,7 @@ describe('EditorService', () => {
     urlConFig: {
       URLS: {
         questionSet: {
-          SYSYTEM_UPDATE: '',
-          UPDATE_COMMENT:"questionset/v2/comment/update/",
-          READ_COMMENT:"questionset/v2/comment/read"
+          SYSYTEM_UPDATE: ''
         }
       }
     }
@@ -56,7 +53,6 @@ describe('EditorService', () => {
         PublicDataService,
         { provide: ConfigService, useValue: configStub }]
     });
-    toasterService = TestBed.inject(ToasterService);
     editorService = TestBed.inject(EditorService);
     treeService = TestBed.inject(TreeService);
     editorService.initialize(editorConfig);
@@ -489,34 +485,5 @@ describe('EditorService', () => {
     const config = editorService.appendCloudStorageHeaders({});
     expect(config).toEqual({});
   });
-
-  it('#readComment() should read comments of questionset', async () => {
-    const publicDataService = TestBed.inject(PublicDataService);
-    spyOn(publicDataService, 'get').and.returnValue(of(mockData.serverResponse));
-    editorService.readComment('do_113941643543011328112').subscribe(data => {
-      expect(data.responseCode).toEqual('OK');
-    });
-  });
-
-  it('should handle successful comment update', () => {
-    const publicDataService = TestBed.inject(PublicDataService);
-    spyOn(publicDataService,'patch').and.returnValue(of(mockData.serverResponse));
-    spyOn(toasterService, 'success');
-
-    editorService.updateComment('contentId', 'comment');
-
-    expect(publicDataService.patch).toHaveBeenCalled();
-  });
-
-  it('should handle error during comment update', () => {
-    const publicDataService = TestBed.inject(PublicDataService);
-    const error = new Error('Failed to update comment');
-    spyOn(publicDataService,'patch').and.returnValue(throwError(error));
-
-    editorService.updateComment('contentId', 'comment');
-
-    expect(publicDataService.patch).toHaveBeenCalled();
-  });
-
 
 });
