@@ -1,4 +1,6 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { QuestionsetEditorLibraryModule } from 'questionset-editor-library';
 import { observationEditorConfig, observationRubricsEditorConfig, questionSetEditorConfig,
    questionEditorConfig, surveyEditorConfig } from './data';
 
@@ -12,6 +14,8 @@ const configMapper = {
 
 @Component({
   selector: 'app-root',
+  standalone: true,
+    imports: [CommonModule, QuestionsetEditorLibraryModule],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
