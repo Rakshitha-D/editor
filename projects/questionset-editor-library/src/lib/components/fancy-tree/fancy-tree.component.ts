@@ -60,7 +60,7 @@ export class FancyTreeComponent implements OnInit, AfterViewInit, OnDestroy {
               public telemetryService: EditorTelemetryService, private helperService: HelperService,
               private toasterService: ToasterService, private cdr: ChangeDetectorRef,
               public configService: ConfigService) { }
-  private onComponentDestroy$ = new Subject<any>();
+  private onComponentDestroy$ = new Subject<void>();
 
   ngOnInit() {
     this.config = _.cloneDeep(this.editorService.editorConfig.config);
@@ -631,7 +631,7 @@ export class FancyTreeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.onComponentDestroy$.next(undefined);
+    this.onComponentDestroy$.next();
     this.onComponentDestroy$.complete();
   }
 }
