@@ -1,8 +1,8 @@
 {
-    "name": "@project-sunbird/sunbird-questionset-editor-web-component",
-    "version": "5.0.0",
+    "name": "@jeraldj/sunbird-questionset-editor-web-component",
+    "version": "6.0.0",
     "description": "The web component package for the sunbird questionset editor",
-    "main": "sunbird-questionset-editor.js",
+    "main": "assets/quml-editor/sunbird-questionset-editor.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },
