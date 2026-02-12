@@ -33,12 +33,12 @@
               },
               {
                 "glob": "**/*",
-                "input": "node_modules/@project-sunbird/sunbird-quml-player-web-component/assets/",
+                "input": "node_modules/@project-sunbird/sunbird-quml-player-web-component/assets/quml-player/assets/",
                 "output": "/assets/"
               }
             ],
             "styles": [
-              "node_modules/@project-sunbird/sunbird-quml-player-web-component/styles.css",
+              "node_modules/@project-sunbird/sunbird-quml-player-web-component/assets/quml-player/styles.css",
               "node_modules/@project-sunbird/sb-styles/assets/styles.scss",
               "src/styles.scss",
               "src/assets/lib/semantic/semantic.min.css",
@@ -57,7 +57,7 @@
               "node_modules/@project-sunbird/telemetry-sdk/index.js",
               "src/assets/libs/ld-stubs.js",
               "node_modules/@project-sunbird/client-services/index.js",
-              "node_modules/@project-sunbird/sunbird-quml-player-web-component/sunbird-quml-player.js"
+              "node_modules/@project-sunbird/sunbird-quml-player-web-component/assets/quml-player/sunbird-quml-player.js"
             ]
           },
           "configurations": {
@@ -216,7 +216,7 @@
               },
               {
                 "glob": "**/*",
-                "input": "node_modules/@project-sunbird/sunbird-quml-player-web-component/assets/",
+                "input": "node_modules/@project-sunbird/sunbird-quml-player-web-component/assets/quml-player/assets/",
                 "output": "/assets/"
               }
             ],
@@ -227,7 +227,7 @@
               "src/assets/lib/semantic/semantic.min.css",
               "src/assets/styles/styles.scss",
               "node_modules/font-awesome/css/font-awesome.css",
-              "node_modules/@project-sunbird/sunbird-quml-player-web-component/styles.css"
+              "node_modules/@project-sunbird/sunbird-quml-player-web-component/assets/quml-player/styles.css"
             ],
             "scripts": [
               "node_modules/@project-sunbird/sunbird-file-upload-library/sunbird-file-upload-library.js",
@@ -242,7 +242,7 @@
               "src/assets/libs/ld-stubs.js",
               "node_modules/@project-sunbird/telemetry-sdk/index.js",
               "node_modules/@project-sunbird/client-services/index.js",
-              "node_modules/@project-sunbird/sunbird-quml-player-web-component/sunbird-quml-player.js"
+              "node_modules/@project-sunbird/sunbird-quml-player-web-component/assets/quml-player/sunbird-quml-player.js"
             ]
           },
           "configurations": {
