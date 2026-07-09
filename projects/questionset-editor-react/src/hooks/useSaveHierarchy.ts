@@ -181,7 +181,7 @@ export function useSaveHierarchy() {
   const { setIsDirty, setLastSaved } = useEditorStore();
   const config = useEditorStore((s) => s.editorConfig);
 
-  const save = useCallback(async (): Promise<boolean> => {
+  const save = useCallback(async (): Promise<Record<string, string> | false> => {
     if (!config || inFlight.current) return false;
     const contentId = getContentId(config.context);
     if (!contentId) return false;
@@ -199,10 +199,13 @@ export function useSaveHierarchy() {
       // Old editor keys NEW SECTIONS by a client uuid (code = uuid) — not the
       // internal temp- marker. Swap before building the payload; question
       // temp- nodes stay (they're excluded from the save until authored).
+      const tempToUuid: Record<string, string> = {};
       const swapTempSectionIds = (nodes: INode[]) => {
         for (const n of nodes) {
           if (!n.isQuestion && n.identifier.startsWith('temp-')) {
-            useTreeStore.getState().replaceNodeId(n.identifier, genUuid());
+            const uuid = genUuid();
+            tempToUuid[n.identifier] = uuid;
+            useTreeStore.getState().replaceNodeId(n.identifier, uuid);
           }
           if (n.children) swapTempSectionIds(n.children);
         }
@@ -235,7 +238,18 @@ export function useSaveHierarchy() {
       setLastSaved(new Date().toISOString());
       setIsDirty(false);
       useEditorStore.getState().eventHandlers.onHierarchySaved?.({ identifiers });
-      return true;
+
+      const finalIdentifiers: Record<string, string> = {};
+      for (const [tempId, uuid] of Object.entries(tempToUuid)) {
+        const realId = identifiers[uuid] ?? uuid;
+        finalIdentifiers[tempId] = realId;
+      }
+      for (const [uuid, realId] of Object.entries(identifiers)) {
+        if (!Object.values(tempToUuid).includes(uuid)) {
+          finalIdentifiers[uuid] = realId;
+        }
+      }
+      return finalIdentifiers;
     } catch (e) {
       console.error('[useSaveHierarchy] save failed:', e);
       notifyError(apiErrorMessage(e, label('messages.error.001', 'Failed to save. Please try again.')));

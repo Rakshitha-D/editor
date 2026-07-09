@@ -13,7 +13,7 @@ function setRootStatus(status: string): void {
   if (rootId) useTreeStore.getState().hydrateNodeMeta(rootId, { status });
 }
 
-export function useToolbarActions(save: () => Promise<boolean | void>) {
+export function useToolbarActions(save: () => Promise<unknown>) {
   const config = useEditorStore((s) => s.editorConfig);
   const setButtonLoader = useEditorStore((s) => s.setButtonLoader);
 

@@ -8,6 +8,7 @@ import type { INode } from '../../types/editor';
 import { resolveQuestionType } from '../../registry';
 import { detectNodeKind } from '../../utils/nodeKind';
 import { notifyError } from '../../utils/notify';
+import { useSaveHierarchy } from '../../hooks/useSaveHierarchy';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -29,6 +30,50 @@ function shortTypeLabel(questionType?: string): string {
 
 function getStatusClass(status?: string): string {
   return (status ?? '').toLowerCase() === 'live' ? 'ready' : 'draft';
+}
+
+function validateNode(nodeId: string): { isValid: boolean; errors: string[] } {
+  const node = useTreeStore.getState().getNodeById(nodeId);
+  if (!node) return { isValid: true, errors: [] };
+
+  const store = useEditorStore.getState();
+  const formConfig = node.parent ? store.unitFormConfig : store.rootFormConfig;
+  if (!formConfig) return { isValid: true, errors: [] };
+
+  const cache = useTreeStore.getState().treeCache[nodeId] ?? {};
+  const values = { ...(node.metadata ?? {}), ...cache };
+  const errors: string[] = [];
+
+  const CORE_FIELDS = new Set(['name', 'description']);
+
+  for (const field of formConfig) {
+    if (!field.visible || !CORE_FIELDS.has(field.code)) continue;
+
+    let value = values[field.code];
+    if (field.code === 'name' && (value === undefined || value === null)) {
+      value = node.name;
+    }
+
+    const inputType = field.inputType ?? 'text';
+    if (inputType === 'multiselect' || inputType === 'keywords') {
+      const arr = Array.isArray(value) ? value : [];
+      if (field.required && arr.length === 0) {
+        errors.push(`${field.label} is required`);
+      }
+    } else if (inputType === 'checkbox') {
+      // Checkboxes are not required
+    } else {
+      const str = value !== undefined && value !== null ? String(value).trim() : '';
+      if (field.required && str.length === 0) {
+        errors.push(`${field.label} is required`);
+      }
+      if (field.maxLength && str.length > field.maxLength) {
+        errors.push(`${field.label} must be at most ${field.maxLength} characters`);
+      }
+    }
+  }
+
+  return { isValid: errors.length === 0, errors };
 }
 
 // ---------------------------------------------------------------------------
@@ -276,6 +321,7 @@ const OutlineTree: React.FC<OutlineTreeProps> = ({ onCollapse }) => {
   const deleteNode = useTreeStore((s) => s.deleteNode);
   const editorMode = useEditorStore((s) => s.editorMode);
   const { openModal } = useUiStore();
+  const { save } = useSaveHierarchy();
 
   const isEditMode = editorMode === 'edit';
 
@@ -306,24 +352,51 @@ const OutlineTree: React.FC<OutlineTreeProps> = ({ onCollapse }) => {
     selectNode(id);
   }, [selectNode]);
 
-  const handleAddSection = useCallback((parentId: string) => {
+  const handleAddSection = useCallback(async (parentId: string) => {
     const root = useTreeStore.getState().treeData[0];
     const rootSaved = !!useEditorStore.getState().lastSaved || (root?.children?.length ?? 0) > 0;
     if (!rootSaved) {
-      notifyError(L('ui.saveSectionFirst', 'Please save the question set before adding a section.'));
-      return;
+      const saveResult = await save();
+      if (saveResult === false) return;
     }
     addNode(parentId, 'section');
-  }, [addNode, L]);
+  }, [addNode, save]);
 
-  const handleAddQuestion = useCallback((parentId: string) => {
+  const handleAddQuestion = useCallback(async (parentId: string) => {
     const parentNode = useTreeStore.getState().getNodeById(parentId);
-    if (parentNode?.identifier.startsWith('temp-')) {
-      notifyError(L('ui.saveQuestionFirst', 'Please save the section before adding a question.'));
-      return;
+    if (!parentNode) return;
+
+    if (parentNode.identifier.startsWith('temp-')) {
+      const nodesToValidate: string[] = [];
+      const collectFolders = (nodes: INode[]) => {
+        for (const n of nodes) {
+          if (!n.isQuestion) {
+            nodesToValidate.push(n.id);
+          }
+          if (n.children) collectFolders(n.children);
+        }
+      };
+      collectFolders(useTreeStore.getState().treeData);
+
+      for (const id of nodesToValidate) {
+        const val = validateNode(id);
+        if (!val.isValid) {
+          notifyError(val.errors[0]);
+          return;
+        }
+      }
+
+      const saveResult = await save();
+      if (saveResult === false) {
+        return;
+      }
+
+      const newParentId = saveResult[parentId] ?? parentId;
+      openModal('questionTypeSelector', { parentId: newParentId });
+    } else {
+      openModal('questionTypeSelector', { parentId });
     }
-    openModal('questionTypeSelector', { parentId });
-  }, [openModal, L]);
+  }, [openModal, save]);
 
   const handleDelete = useCallback((id: string) => {
     openModal('confirmDelete', { nodeId: id });
@@ -342,23 +415,16 @@ const OutlineTree: React.FC<OutlineTreeProps> = ({ onCollapse }) => {
     : null;
   const selectedKind = selectedNode ? detectNodeKind(selectedNode) : null;
   const addSectionDisabled  = selectedKind === 'section' || selectedKind === 'question';
-  const addQuestionDisabled = selectedKind === 'root'    || selectedKind === 'question';
+  const addQuestionDisabled = selectedKind !== 'section';
 
   // Resolve parent for "Add Question" (only used when not disabled)
   const questionParentId = selectedKind === 'section'
     ? (selectedNodeId ?? rootId)
     : rootId;
 
-  // Dimmed (but still clickable, so the click surfaces the "save first"
-  // toast from handleAddSection/handleAddQuestion) until the prerequisite
-  // is saved: the root questionset for "Add Section", the selected section
-  // for "Add Question". A questionset that already has sections was clearly
-  // saved in a previous session, so it isn't blocked just for lacking a
-  // lastSaved timestamp in THIS one.
+  // Dimmed until the prerequisite is saved: the root questionset for "Add Section"
   const rootNeedsSaveFirst = !lastSaved && (treeData[0]?.children?.length ?? 0) === 0;
   const addSectionNeedsSaveFirst = !addSectionDisabled && rootNeedsSaveFirst;
-  const sectionNeedsSaveFirst = selectedKind === 'section' && !!selectedNode?.identifier.startsWith('temp-');
-  const addQuestionNeedsSaveFirst = !addQuestionDisabled && sectionNeedsSaveFirst;
 
   return (
     <>
@@ -408,7 +474,7 @@ const OutlineTree: React.FC<OutlineTreeProps> = ({ onCollapse }) => {
           <button
             onClick={() => handleAddQuestion(questionParentId ?? rootId)}
             disabled={addQuestionDisabled}
-            style={(addQuestionDisabled || addQuestionNeedsSaveFirst) ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+            style={addQuestionDisabled ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
           >
             <Icon name="plus" size={15} />{L('ui.addQuestion', 'Add Question')}
           </button>
